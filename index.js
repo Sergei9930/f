@@ -42,11 +42,31 @@ enter_dump_threshold: {
     ua: '✏️ Введіть поріг зміни ціни вручну (від 1 до 10%):',
     en: '✏️ Enter manual price change threshold (from 1 to 10%):'
 },
-invalid_format_threshold: {
+  invalid_format_threshold: {
     ru: '🚫 Неверный формат. Введите число от 1 до 10. Например: 1.5',
     ua: '🚫 Невірний формат. Введіть число від 1 до 10. Наприклад: 1.5',
     en: '🚫 Invalid format. Enter a number from 1 to 10. Example: 1.5'
- }
+ },
+  test_signals_menu: {
+    ru: '📢 Тестовые сигналы',
+    ua: '📢 Тестові сигнали',
+    en: '📢 Test signals'
+  },
+  test_signals_start: {
+    ru: '▶️ Включить сигналы',
+    ua: '▶️ Увімкнути сигнали',
+    en: '▶️ Start signals'
+  },
+  test_signals_stop: {
+    ru: '🛑 Остановить сигналы',
+    ua: '🛑 Зупинити сигнали',
+    en: '🛑 Stop signals'
+  },
+  test_signal_message: {
+    ru: '🚀 Тестовый сигнал!',
+    ua: '🚀 Тестовий сигнал!',
+    en: '🚀 Test signal!'
+  }
 };
 
 const bot = new TelegramBot(TOKEN, { polling: true });
@@ -54,6 +74,16 @@ const bot = new TelegramBot(TOKEN, { polling: true });
 bot.setMyCommands([
   { command: '/start', description: 'Запустити бота' }
 ]);
+
+// === Периодическая отправка тестовых сигналов ===
+setInterval(() => {
+  Object.keys(users).forEach(id => {
+    if (users[id]?.signalsEnabled) {
+      const lang = users[id]?.lang || 'ua';
+      bot.sendMessage(id, translations.test_signal_message[lang]);
+    }
+  });
+}, 10000);
 
 // === Удаление предыдущего сообщения ===
 function deleteLastMessage(chatId) {
@@ -71,6 +101,7 @@ function getMainMenu(chatId) {
       reply_markup: {
         keyboard: [
           ['📊 Управление', '📈 Биржи'],
+          ['📢 Тестовые сигналы'],
           ['👤 Доступ', 'ℹ️ Информация']
         ],
         resize_keyboard: true
@@ -81,6 +112,7 @@ function getMainMenu(chatId) {
       reply_markup: {
         keyboard: [
           ['📊 Management', '📈 Exchanges'],
+          ['📢 Test signals'],
           ['👤 Access', 'ℹ️ Information']
         ],
         resize_keyboard: true
@@ -91,6 +123,7 @@ function getMainMenu(chatId) {
       reply_markup: {
         keyboard: [
           ['📊 Управління', '📈 Біржі'],
+          ['📢 Тестові сигнали'],
           ['👤 Доступ', 'ℹ️ Інформація']
         ],
         resize_keyboard: true
@@ -180,6 +213,27 @@ bot.on('message', (msg) => {
       reply_markup: {
         inline_keyboard: getManagementMenu(chatId)
       }
+    }).then(sentMessage => {
+      lastMessageId[chatId] = sentMessage.message_id;
+    });
+  }
+
+  // === Тестовые сигналы ===
+  if (text === '📢 Тестові сигнали' || text === '📢 Тестовые сигналы' || text === '📢 Test signals') {
+    if (!users[chatId]) users[chatId] = {};
+
+    deleteLastMessage(chatId);
+
+    const enabled = users[chatId].signalsEnabled;
+    const lang = users[chatId]?.lang || 'ua';
+    const buttonText = enabled ? translations.test_signals_stop[lang] : translations.test_signals_start[lang];
+    const keyboard = [
+      [{ text: buttonText, callback_data: 'toggle_test_signals' }],
+      [{ text: '⬅️ Назад', callback_data: 'back_to_main' }]
+    ];
+
+    bot.sendMessage(chatId, translations.test_signals_menu[lang], {
+      reply_markup: { inline_keyboard: keyboard }
     }).then(sentMessage => {
       lastMessageId[chatId] = sentMessage.message_id;
     });
@@ -346,6 +400,30 @@ bot.sendMessage(chatId, translations.enter_arbitrage_threshold[lang]);
     });
 
     keyboard.push([{ text: '⬅️ Назад', callback_data: 'back_to_main' }]);
+
+    bot.editMessageReplyMarkup(
+      { inline_keyboard: keyboard },
+      {
+        chat_id: chatId,
+        message_id: query.message.message_id
+      }
+    );
+  }
+
+  // === Toggle test signals ===
+  if (data === 'toggle_test_signals') {
+    if (!users[chatId]) users[chatId] = {};
+
+    users[chatId].signalsEnabled = !users[chatId].signalsEnabled;
+    fs.writeFileSync('./users.json', JSON.stringify(users, null, 2));
+
+    const enabled = users[chatId].signalsEnabled;
+    const lang = users[chatId]?.lang || 'ua';
+    const buttonText = enabled ? translations.test_signals_stop[lang] : translations.test_signals_start[lang];
+    const keyboard = [
+      [{ text: buttonText, callback_data: 'toggle_test_signals' }],
+      [{ text: '⬅️ Назад', callback_data: 'back_to_main' }]
+    ];
 
     bot.editMessageReplyMarkup(
       { inline_keyboard: keyboard },
