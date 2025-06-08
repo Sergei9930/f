@@ -1,0 +1,42 @@
+{
+  "7062064147": {
+    "exchanges": {
+      "BITGET": true,
+      "BYBIT": false,
+      "BINANCE": false,
+      "MEXC": true,
+      "OKX": true,
+      "test_signals": true
+    },
+    "dump_pump": {
+      "interval": 300,
+      "percent": 3
+    },
+    "arbitrage": {
+      "interval": 300,
+      "percent": 7
+    },
+    "awaitingArbitragePercent": false,
+    "lang": "ru",
+    "signalsEnabled": true
+  },
+  "5162369432": {
+    "exchanges": {
+      "BYBIT": true,
+      "OKX": true,
+      "BINANCE": true,
+      "BITGET": false,
+      "MEXC": true
+    },
+    "dump_pump": {
+      "interval": 10,
+      "percent": 7
+    },
+    "arbitrage": {
+      "interval": 300,
+      "percent": 4
+    },
+    "awaitingArbitragePercent": false,
+    "lang": "ru"
+  }
+}
